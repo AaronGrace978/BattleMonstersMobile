@@ -2,6 +2,11 @@ name: Android and iOS release
 
 on:
   workflow_dispatch:
+    inputs:
+      allow_unsigned:
+        description: 'Explicitly allow a development release without distribution signing'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -25,6 +30,14 @@ jobs:
       tag: ${{ steps.metadata.outputs.tag }}
       version: ${{ steps.metadata.outputs.version }}
       build: ${{ steps.existing.outputs.build }}
+      android_keystore: ${{ steps.signing.outputs.android_keystore }}
+      android_store_password: ${{ steps.signing.outputs.android_store_password }}
+      android_alias: ${{ steps.signing.outputs.android_alias }}
+      android_key_password: ${{ steps.signing.outputs.android_key_password }}
+      ios_certificate: ${{ steps.signing.outputs.ios_certificate }}
+      ios_password: ${{ steps.signing.outputs.ios_password }}
+      ios_profile: ${{ steps.signing.outputs.ios_profile }}
+      ios_ready: ${{ steps.signing.outputs.ios_ready }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,6 +54,13 @@ jobs:
           else
             echo "build=true" >> "$GITHUB_OUTPUT"
           fi
+      - name: Identify configured signing secrets (names only)
+        id: signing
+        if: steps.existing.outputs.build == 'true'
+        env:
+          BMM_SIGNING_SECRETS_JSON: ${{ toJSON(secrets) }}
+          BMM_ALLOW_UNSIGNED: ${{ inputs.allow_unsigned || false }}
+        run: node scripts/release/signing-secrets.mjs
 
   android:
     needs: version
@@ -68,10 +88,10 @@ jobs:
       - name: Configure optional Android distribution signing
         id: signing
         env:
-          KEYSTORE_BASE64: ${{ secrets.BMM_ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.BMM_ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.BMM_ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.BMM_ANDROID_KEY_PASSWORD }}
+          KEYSTORE_BASE64: ${{ secrets[needs.version.outputs.android_keystore] }}
+          KEYSTORE_PASSWORD: ${{ secrets[needs.version.outputs.android_store_password] }}
+          KEY_ALIAS: ${{ secrets[needs.version.outputs.android_alias] }}
+          KEY_PASSWORD: ${{ secrets[needs.version.outputs.android_key_password] }}
         run: |
           if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
             printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/battle-monsters-upload.jks"
@@ -84,9 +104,9 @@ jobs:
       - name: Compile Android APK and App Bundle
         working-directory: android
         env:
-          BMM_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.BMM_ANDROID_KEYSTORE_PASSWORD }}
-          BMM_ANDROID_KEY_ALIAS: ${{ secrets.BMM_ANDROID_KEY_ALIAS }}
-          BMM_ANDROID_KEY_PASSWORD: ${{ secrets.BMM_ANDROID_KEY_PASSWORD }}
+          BMM_ANDROID_KEYSTORE_PASSWORD: ${{ secrets[needs.version.outputs.android_store_password] }}
+          BMM_ANDROID_KEY_ALIAS: ${{ secrets[needs.version.outputs.android_alias] }}
+          BMM_ANDROID_KEY_PASSWORD: ${{ secrets[needs.version.outputs.android_key_password] }}
         run: ./gradlew --no-daemon :app:assembleDebug :app:assembleRelease :app:bundleRelease
       - name: Package Android artifacts
         env:
@@ -120,6 +140,13 @@ jobs:
           pod --version
       - name: Build and synchronize bundled iOS game
         run: npm run mobile:sync:ios
+      - name: Configure and validate Apple distribution signing
+        if: needs.version.outputs.ios_ready == 'true'
+        env:
+          BMM_IOS_CERTIFICATE_BASE64: ${{ secrets[needs.version.outputs.ios_certificate] }}
+          BMM_IOS_CERT_PASSWORD: ${{ secrets[needs.version.outputs.ios_password] }}
+          BMM_IOS_PROFILE_BASE64: ${{ secrets[needs.version.outputs.ios_profile] }}
+        run: node scripts/release/ios-signing.mjs
       - name: Compile universal iOS simulator app
         run: >-
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App
@@ -128,12 +155,27 @@ jobs:
           -derivedDataPath work/ios-simulator
           CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build
       - name: Compile unsigned iOS device archive
+        if: needs.version.outputs.ios_ready != 'true'
         run: >-
           xcodebuild -workspace ios/App/App.xcworkspace -scheme App
           -configuration Release -sdk iphoneos
           -destination 'generic/platform=iOS'
           -archivePath work/BattleMonstersMobile.xcarchive
           CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO archive
+      - name: Compile signed iOS device archive
+        if: needs.version.outputs.ios_ready == 'true'
+        run: >-
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App
+          -configuration Release -sdk iphoneos
+          -destination 'generic/platform=iOS'
+          -archivePath work/BattleMonstersMobile.xcarchive archive
+      - name: Export signed iOS IPA
+        if: needs.version.outputs.ios_ready == 'true'
+        run: >-
+          xcodebuild -exportArchive
+          -archivePath work/BattleMonstersMobile.xcarchive
+          -exportOptionsPlist "$BMM_IOS_EXPORT_OPTIONS"
+          -exportPath work/ios-export
       - name: Package simulator app and unsigned device build
         run: node scripts/release/package.mjs ios
       - uses: actions/upload-artifact@v4
@@ -142,6 +184,9 @@ jobs:
           path: distribution/ios/*
           if-no-files-found: error
           retention-days: 30
+      - name: Remove temporary Apple signing material
+        if: always()
+        run: node scripts/release/ios-signing.mjs cleanup
 
   publish:
     needs: [version, android, ios]

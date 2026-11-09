@@ -1,0 +1,5 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {signingMetadata} from '../scripts/release/signing-secrets.mjs';
+test('Signing discovery resolves Android and Apple credentials without returning their values',()=>{const secret='private-signing-material';const metadata=signingMetadata({ANDROID_KEYSTORE_BASE64:secret,KEYSTORE_PASSWORD:secret,KEY_ALIAS:secret,KEY_PASSWORD:secret,BUILD_CERTIFICATE_BASE64:secret,P12_PASSWORD:secret,BUILD_PROVISION_PROFILE_BASE64:secret,GITHUB_TOKEN:secret});assert.equal(metadata.android_ready,true);assert.equal(metadata.ios_ready,true);assert.equal(metadata.ios_certificate,'BUILD_CERTIFICATE_BASE64');assert.equal(metadata.ios_profile,'BUILD_PROVISION_PROFILE_BASE64');assert.ok(!JSON.stringify(metadata).includes(secret));assert.ok(!metadata.signing_names.includes('GITHUB_TOKEN'));});
+test('Missing or partial signing configurations are never marked ready',()=>{const metadata=signingMetadata({ANDROID_KEYSTORE_BASE64:'fixture',OPENAI_API_KEY:'unrelated'});assert.equal(metadata.android_ready,false);assert.equal(metadata.ios_ready,false);assert.deepEqual(metadata.signing_names,['ANDROID_KEYSTORE_BASE64']);});

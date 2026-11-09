@@ -23,9 +23,11 @@ if(platform==='android'){
 }else if(platform==='ios'){
  const app='work/BattleMonstersMobile.xcarchive/Products/Applications/App.app';
  await stat(app);await zip('work/ios-simulator/Build/Products/Release-iphonesimulator/App.app','iOS-simulator.zip');
- await zip('work/BattleMonstersMobile.xcarchive','iOS-unsigned.xcarchive.zip');
- const payload='work/ios-payload/Payload';await mkdir(payload,{recursive:true});await cp(app,`${payload}/App.app`,{recursive:true});await zip(payload,'iOS-unsigned.ipa');
- await writeFile(`${directory}/ios-build.json`,JSON.stringify({version,commit:sha,platform,distributionSigned:false,deviceBuild:'Unsigned; Apple signing is required for iPhone installation or TestFlight',simulatorBuild:'Runs in Xcode Simulator; not installable on an iPhone',files},null,2));
+ const signed=process.env.BMM_IOS_SIGNED==='true';
+ await zip('work/BattleMonstersMobile.xcarchive',signed?'iOS-signed.xcarchive.zip':'iOS-unsigned.xcarchive.zip');
+ if(signed){const ipa=(await readdir('work/ios-export')).find(n=>n.endsWith('.ipa'));if(!ipa)throw Error('Xcode did not export a signed IPA');await add(`work/ios-export/${ipa}`,'iOS-signed.ipa');}
+ else{const payload='work/ios-payload/Payload';await mkdir(payload,{recursive:true});await cp(app,`${payload}/App.app`,{recursive:true});await zip(payload,'iOS-unsigned.ipa');}
+ await writeFile(`${directory}/ios-build.json`,JSON.stringify({version,commit:sha,platform,distributionSigned:signed,bundleId:process.env.BMM_IOS_BUNDLE_ID||null,exportMethod:process.env.BMM_IOS_EXPORT_METHOD||null,deviceBuild:signed?'Apple-signed device build; distribution is limited by the provisioning profile':'Unsigned; Apple signing is required for iPhone installation or TestFlight',simulatorBuild:'Runs in Xcode Simulator; not installable on an iPhone',files},null,2));
 }else{
  const source=prefix+'-source.zip';execFileSync('git',['archive','--format=zip',`--prefix=Battle-Monsters-Mobile-v${version}/`,`--output=${resolve(directory,source)}`,'HEAD']);
  const entries=(await readdir(directory)).filter(n=>!['SHA256SUMS.txt','release-manifest.json'].includes(n)).sort();
