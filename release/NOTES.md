@@ -9,6 +9,7 @@ This is a **development prerelease** for Android and iOS. Native compilation and
 
 ### iOS
 
+- `iOS-signed.ipa` / `iOS-signed.xcarchive.zip`: Apple-signed files when configured signing credentials are available. Installation or App Store Connect distribution is limited by the supplied provisioning profile.
 - `iOS-simulator.zip`: compiled application for Xcode Simulator on a Mac.
 - `iOS-unsigned.ipa`: compiled device application; requires Apple signing before iPhone installation or TestFlight upload.
 - `iOS-unsigned.xcarchive.zip`: Xcode device archive for the signing and distribution handoff.

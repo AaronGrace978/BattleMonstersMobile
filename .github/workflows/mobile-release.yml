@@ -7,6 +7,10 @@ on:
         description: 'Explicitly allow a development release without distribution signing'
         type: boolean
         default: false
+      publish_release:
+        description: 'Publish the release after both platform builds succeed'
+        type: boolean
+        default: true
   push:
     branches: [main]
     paths:
@@ -199,7 +203,7 @@ jobs:
 
   publish:
     needs: [version, android, ios]
-    if: needs.version.outputs.build == 'true'
+    if: needs.version.outputs.build == 'true' && (github.event_name != 'workflow_dispatch' || inputs.publish_release == true)
     runs-on: ubuntu-latest
     permissions:
       contents: write
