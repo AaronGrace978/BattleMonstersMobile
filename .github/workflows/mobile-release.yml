@@ -11,6 +11,10 @@ on:
         description: 'Publish the release after both platform builds succeed'
         type: boolean
         default: true
+      create_draft:
+        description: 'Attach verified build artifacts to a draft without publishing it'
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -203,7 +207,7 @@ jobs:
 
   publish:
     needs: [version, android, ios]
-    if: needs.version.outputs.build == 'true' && (github.event_name != 'workflow_dispatch' || inputs.publish_release == true)
+    if: needs.version.outputs.build == 'true' && (github.event_name != 'workflow_dispatch' || inputs.publish_release == true || inputs.create_draft == true)
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -224,8 +228,5 @@ jobs:
           RELEASE_TAG: ${{ needs.version.outputs.tag }}
           REPOSITORY: ${{ github.repository }}
           COMMIT_SHA: ${{ github.sha }}
-        run: |
-          gh release create "$RELEASE_TAG" distribution/release/* \
-            --repo "$REPOSITORY" --target "$COMMIT_SHA" \
-            --title "Battle Monsters Mobile $RELEASE_TAG — Android & iOS development builds" \
-            --notes-file release/NOTES.md --prerelease
+          BMM_RELEASE_DRAFT: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release == false }}
+        run: node scripts/release/publish.mjs
