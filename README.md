@@ -1,6 +1,6 @@
 # Battle Monsters Mobile
 
-A playable, responsive monster battler with a holographic grimoire. Version **0.1.0**, a development build with Android and iOS source projects. This is not a signed store release.
+A playable 3D monster battler with a rustic leather-and-parchment grimoire. Ten original GLB creatures render in real time through WebGL 2. Version **0.2.0**, a development build with Android and iOS source projects. This is not a signed store release.
 
 ## Run
 
@@ -32,16 +32,18 @@ All ten monsters are available from the beginning. Essence is a progression coun
 
 ## What is implemented
 
-- Ten original creature portraits, custom Pyrax key art, unique stat combinations, lore, elements, personalities, and signature moves.
+- Ten original smooth, volumetric GLB creatures with physically based materials and Idle, Attack, and Summon clips. Each has a unique silhouette, stat combination, lore, element, personality, and signature move. The earlier illustrations are retained as concept art only.
 - Responsive sanctuary, bestiary search and rarity filters, creature detail tabs, companion chat, solo arena, rewards, quests, saved preferences, and sound effects.
-- Open-palm camera detection and tracking; holographic **2D** book overlay and a camera-free preview. Runtime and model download on first use.
+- A 3D grimoire with curved page geometry, leather cover, brass details, printed names and projected tap targets. Open-palm tracking places it over a live camera feed. Summoned 3D creatures appear in that same camera view; a camera-free preview is available.
 - Web Speech recognition in supported browsers; native speech-recognition plugin in Android and iOS projects. Tap controls remain available on every platform.
 - Server-side OpenAI, Ollama Cloud, and Anthropic adapters with provider status, input validation, request timeouts, error handling, and per-isolate rate limiting.
 - Capacitor native projects, original app icons and launch artwork, permission descriptions, Android target API 36, and an iOS privacy manifest draft.
 
 ## Important boundaries
 
-This is a single-player 2D game and camera overlay, not a spatial VR game. There are no rigged 3D monster models, depth occlusion, ARKit/ARCore anchors, headsets, multiplayer, accounts, cloud saves, purchases, or store submissions. The creature artwork is rendered imagery; it is not a set of animated 3D assets. The AI companions generate dialogue only; the deterministic battle engine controls combat.
+This build uses animated 3D meshes in the sanctuary, bestiary, creature profiles, summoning, and the shared 3D battle arena. Each asset is generated in Blender, smoothed into continuous organic surfaces, exported to glTF, and compressed with Meshopt. Character displays contain no image planes or sprite impostors. A single shared WebGL renderer uses scissoring for multiple viewports, with cached geometry and paused off-screen animation. Drag to rotate and use pinch or the zoom controls to inspect creatures. WebGL 2 is required; unsupported hardware receives an explicit error rather than a 2D creature substitute.
+
+The camera experience composites rendered 3D content with a hand-landmark position. ARKit/ARCore world anchoring, depth occlusion, stereoscopic headset VR, multiplayer, accounts, cloud saves, purchases, and store submission are not implemented. AI companions generate dialogue; the battle engine controls combat.
 
 Browser visual QA, physical camera/voice behavior, and signed native builds have not been verified in this environment. See [the release guide](docs/MOBILE-RELEASE.md) for the concrete steps to a production release.
 
@@ -78,7 +80,10 @@ The existing `android/` and `ios/` directories are checked in; do not run `cap a
 
 | Path | Purpose |
 | --- | --- |
-| `src/main.jsx`, `src/style.css` | Playable UI and device features |
+| `src/main.jsx`, `src/style.css`, `src/rustic.css` | Playable UI, rustic art direction, and device features |
+| `src/ModelViewport.jsx`, `src/world/renderer.mjs` | Shared WebGL renderer, model loading, animation, camera controls, 3D grimoire |
+| `public/models/` | Ten mobile-optimized GLB meshes and a manifest with hashes and geometry counts |
+| `scripts/models/build_creatures.py`, `scripts/optimize-models.mjs` | Reproducible Blender modeling, animation, preview rendering, and Meshopt pipeline |
 | `src/game.mjs` | Monster catalog, battle engine, local dialogue, save validation |
 | `src/speech.mjs` | Web/native speech helpers |
 | `server/api.mjs` | Provider routing and server-only credentials |
@@ -88,3 +93,7 @@ The existing `android/` and `ios/` directories are checked in; do not run `cap a
 | `android/`, `ios/` | Native source projects |
 
 Artwork was generated specifically for this game. Creature names and branding are original working names and require normal trademark clearance before commercial publication. Npm dependencies retain their own licenses. Review third-party and model terms before release.
+
+## Rebuild the 3D assets
+
+The checked-in compressed GLB files work without Blender. To regenerate the complete roster, install Blender 4.3+ and run `npm run models:build`. Blender renders character previews to `work/previews/` and exports raw assets to `work/models/`; the optimizer canonicalizes the resting pose and writes `public/models/`. The full ten-creature mesh payload is under 2.5 MB. No external model-generation API or proprietary asset pack is required.

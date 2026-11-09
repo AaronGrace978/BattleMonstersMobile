@@ -1,10 +1,10 @@
-# Mobile release handoff — version 0.1.0
+# Mobile release handoff — version 0.2.0
 
 ## Current status
 
 The playable web build and native source projects are implemented. **No APK, AAB, IPA, signed archive, TestFlight build, Play testing release, or store listing has been submitted.** Android SDK tooling is absent, and this Linux environment has neither Xcode nor CocoaPods. A generated native project is not evidence of a successful device build.
 
-The camera experience is a 2D holographic overlay following a detected palm. It is not spatially anchored AR, a stereo VR experience, or an animated 3D creature renderer. Those would be separate development work if required for the final product.
+The game now renders ten animated, volumetric GLB characters through Three.js / WebGL 2. The grimoire is a 3D leather book with curved page meshes and projected touch targets; summoned creatures render over the camera feed. Hand landmarks position the view. Spatial AR world anchoring, depth occlusion, and headset stereo rendering remain separate work. Validate WebGL 2 support and GPU memory on every supported device; there is no silent 2D model fallback.
 
 ## Android
 
@@ -22,7 +22,7 @@ Camera and microphone permissions are declared; camera and microphone hardware a
 
 1. Use a Mac with a currently accepted version of Xcode, iOS SDK, and CocoaPods. Confirm Apple’s current submission SDK requirements.
 2. Run `npm ci`, `npm run mobile:sync`, then `npx cap open ios`. If necessary, run `pod install` in `ios/App/` on that Mac.
-3. Select your Apple Developer team, confirm a unique bundle identifier, configure signing, and increase the build number for subsequent uploads. Marketing version is `0.1.0` and initial build number is `1`.
+3. Select your Apple Developer team, confirm a unique bundle identifier, configure signing, and increase the build number for subsequent uploads. Marketing version is `0.2.0` and build number is `2`.
 4. Inspect the included camera, microphone, and speech-recognition descriptions in `Info.plist`. Check the privacy manifest and all transitive dependency manifests against actual required-reason API use. The included privacy declarations are a draft for this development configuration and need release review.
 5. Build and test on physical iPhones and an iPad, including permission refusal and later revocation, backgrounding, small screens, notches, camera orientation, speech availability, slow model downloads, and low-power mode.
 6. Archive, validate, upload to App Store Connect, and distribute through TestFlight before requesting App Review. Supply your privacy policy URL, support URL, review contact, rating, device screenshots, export declarations, and final privacy questionnaire.
@@ -44,9 +44,11 @@ The private website can call its same-origin Worker after server keys are config
 | Area | Acceptance |
 | --- | --- |
 | First launch | All screens load without a key; built-in companion chat works |
-| Bestiary | Ten correct portraits and distinct stats; search, rarity filters, all profile tabs |
+| Bestiary | Ten correct animated GLB meshes and distinct stats; search, filters, profile tabs, orbit/pinch/reset |
+| 3D rendering | Continuous smooth geometry, materials, resting scale, idle clips, camera fit, shadows, single shared context, no model overlap with dialogs/navigation |
+| Battle scene | Both characters share a 3D arena; lunge, counterattack, signature projectile, guard and result overlays |
 | Summoning | Each of ten names selects the correct active companion |
-| Camera | Permission granted/denied/revoked, no camera, rear camera, open-palm stability, book follows hand |
+| Camera | Permission granted/denied/revoked, no camera, rear camera, open-palm stability, 3D book follows hand, projected name targets, summoned creature and recall |
 | Model download | Slow connection and CDN failure show a useful message; manual grimoire remains usable |
 | Voice | All ten spoken names, recognition errors, no speech service, microphone refusal, cancellation |
 | Battle | All skills, energy limits, status effects, victory, defeat, retreat, rewards exactly once |

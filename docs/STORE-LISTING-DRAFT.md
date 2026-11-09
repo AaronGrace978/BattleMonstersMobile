@@ -20,13 +20,13 @@ Chat with built-in monster personalities, available without an AI subscription. 
 
 **Features represented in this build**
 
-- Ten illustrated monsters with unique stats, elements, stories, and abilities.
+- Ten animated 3D monsters with unique stats, elements, stories, and abilities.
 - Solo turn-based battles and elemental strategy.
 - A camera grimoire with on-device hand tracking and manual preview.
 - Voice summoning where the device supports speech recognition.
 - Companion conversations, shared bond progression, and local saves.
 - No ads or purchases in this development version.
 
-The camera feature is a 2D overlay; do not market this build as spatial AR, 3D VR, multiplayer, or cloud-synced. Only advertise optional live AI after the production authentication and provider integration is complete.
+The game uses actual 3D meshes and WebGL rendering, with camera compositing driven by hand landmarks. Do not market it as depth-anchored spatial AR, headset VR, multiplayer, or cloud-synced. Only advertise optional live AI after the production authentication and provider integration is complete.
 
 **Owner-supplied values needed:** final privacy URL, support URL/email, publisher legal identity, review contact, audience/rating questionnaire, localized screenshots, Android feature graphic, and final store categories. Check the app name and creature names for trademark conflicts before publication.

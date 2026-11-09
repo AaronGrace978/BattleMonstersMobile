@@ -1,0 +1,146 @@
+{
+  "version": "0.2.0",
+  "format": "glTF 2.0 / EXT_meshopt_compression",
+  "models": [
+    {
+      "id": "pyrax",
+      "name": "Pyrax",
+      "file": "/models/pyrax.glb",
+      "bytes": 238296,
+      "sha256": "3d305b03951f643d8da8248dddb0f376779e43a2edeff7062078e7710400efa4",
+      "triangles": 46070,
+      "meshes": 13,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "glaciel",
+      "name": "Glaciel",
+      "file": "/models/glaciel.glb",
+      "bytes": 271892,
+      "sha256": "b2d3a5051b5debd87d6dc0830393f470f44f8ddbdff6067eea40145b94da28a6",
+      "triangles": 57212,
+      "meshes": 7,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "voltra",
+      "name": "Voltra",
+      "file": "/models/voltra.glb",
+      "bytes": 122632,
+      "sha256": "76bf0b05aed77d41cb98d8bd5887543421e163eaa8be81c9d7719f7eb98f748c",
+      "triangles": 23692,
+      "meshes": 6,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "sylvara",
+      "name": "Sylvara",
+      "file": "/models/sylvara.glb",
+      "bytes": 161784,
+      "sha256": "ca01a7c07aa79b31ca28ed99e6d5f672a413b4baeac619dee81caed3514b98b7",
+      "triangles": 31848,
+      "meshes": 7,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "abyssal",
+      "name": "Abyssal",
+      "file": "/models/abyssal.glb",
+      "bytes": 131028,
+      "sha256": "82c437fbbbcca3f49f03be5cfe59d35c2b8d95b44d49b36b1b5b78661f0fa28f",
+      "triangles": 24088,
+      "meshes": 6,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "obsidian",
+      "name": "Obsidian",
+      "file": "/models/obsidian.glb",
+      "bytes": 115656,
+      "sha256": "74efc700dcf4c1a45685ba9de7d9557969e83a8a845f70b927cc62f87cb7aabb",
+      "triangles": 22980,
+      "meshes": 4,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "zephyr",
+      "name": "Zephyr",
+      "file": "/models/zephyr.glb",
+      "bytes": 148940,
+      "sha256": "2a748764b315172a2f95095e044214c99874b9079daf4e70bf71fb3e1c96f7b9",
+      "triangles": 22898,
+      "meshes": 11,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "noctis",
+      "name": "Noctis",
+      "file": "/models/noctis.glb",
+      "bytes": 227644,
+      "sha256": "196951a3929b85b7259cf4bfaf4d68d54620f258356e6992bb97245e72e71175",
+      "triangles": 47926,
+      "meshes": 6,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "solaris",
+      "name": "Solaris",
+      "file": "/models/solaris.glb",
+      "bytes": 177244,
+      "sha256": "86057e25666765e69511db543c53424fd66abfff991799f98dc73f40a2ce6c9f",
+      "triangles": 28008,
+      "meshes": 12,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    },
+    {
+      "id": "mycelis",
+      "name": "Mycelis",
+      "file": "/models/mycelis.glb",
+      "bytes": 359320,
+      "sha256": "c581b728a4737202503077657b58aa13015fa6be9fde7c329b42a157716131aa",
+      "triangles": 75640,
+      "meshes": 7,
+      "animations": [
+        "Idle",
+        "Attack",
+        "Summon"
+      ]
+    }
+  ]
+}
