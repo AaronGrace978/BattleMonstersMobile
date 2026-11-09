@@ -1,0 +1,173 @@
+name: Android and iOS release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/mobile-release.yml'
+      - 'scripts/release/**'
+      - 'release/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.metadata.outputs.tag }}
+      version: ${{ steps.metadata.outputs.version }}
+      build: ${{ steps.existing.outputs.build }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: metadata
+        run: node scripts/release/metadata.mjs >> "$GITHUB_OUTPUT"
+      - id: existing
+        env:
+          RELEASE_TAG: ${{ steps.metadata.outputs.tag }}
+        run: |
+          if git rev-parse --verify "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "Release tag $RELEASE_TAG already exists; bump the app version to cut another release."
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  android:
+    needs: version
+    if: needs.version.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Install dependencies and run checks
+        run: |
+          npm ci
+          npm test
+      - name: Build and synchronize bundled Android game
+        run: npm run mobile:sync:android
+      - name: Install Android SDK platform
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Configure optional Android distribution signing
+        id: signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.BMM_ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.BMM_ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.BMM_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.BMM_ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/battle-monsters-upload.jks"
+            echo "BMM_ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/battle-monsters-upload.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "Distribution signing is not configured; building a development-signed APK and unsigned AAB."
+          fi
+      - name: Compile Android APK and App Bundle
+        working-directory: android
+        env:
+          BMM_ANDROID_KEYSTORE_PASSWORD: ${{ secrets.BMM_ANDROID_KEYSTORE_PASSWORD }}
+          BMM_ANDROID_KEY_ALIAS: ${{ secrets.BMM_ANDROID_KEY_ALIAS }}
+          BMM_ANDROID_KEY_PASSWORD: ${{ secrets.BMM_ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon :app:assembleDebug :app:assembleRelease :app:bundleRelease
+      - name: Package Android artifacts
+        env:
+          BMM_ANDROID_SIGNED: ${{ steps.signing.outputs.signed }}
+        run: node scripts/release/package.mjs android
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-release
+          path: distribution/android/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Remove temporary signing file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/battle-monsters-upload.jks"
+
+  ios:
+    needs: version
+    if: needs.version.outputs.build == 'true'
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install dependencies and verify toolchain
+        run: |
+          npm ci
+          xcodebuild -version
+          pod --version
+      - name: Build and synchronize bundled iOS game
+        run: npm run mobile:sync:ios
+      - name: Compile universal iOS simulator app
+        run: >-
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App
+          -configuration Release -sdk iphonesimulator
+          -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath work/ios-simulator
+          CODE_SIGNING_ALLOWED=NO ONLY_ACTIVE_ARCH=NO build
+      - name: Compile unsigned iOS device archive
+        run: >-
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App
+          -configuration Release -sdk iphoneos
+          -destination 'generic/platform=iOS'
+          -archivePath work/BattleMonstersMobile.xcarchive
+          CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO archive
+      - name: Package simulator app and unsigned device build
+        run: node scripts/release/package.mjs ios
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-release
+          path: distribution/ios/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    needs: [version, android, ios]
+    if: needs.version.outputs.build == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: '*-release'
+          path: distribution/release
+          merge-multiple: true
+      - name: Package source, checksums, and provenance
+        run: node scripts/release/package.mjs release
+      - name: Publish Android and iOS development release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.version.outputs.tag }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          gh release create "$RELEASE_TAG" distribution/release/* \
+            --repo "$REPOSITORY" --target "$COMMIT_SHA" \
+            --title "Battle Monsters Mobile $RELEASE_TAG — Android & iOS development builds" \
+            --notes-file release/NOTES.md --prerelease

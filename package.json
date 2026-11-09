@@ -10,7 +10,9 @@
     "mobile:sync": "vite build --mode mobile && cap sync",
     "mobile:android": "cap open android",
     "mobile:ios": "cap open ios",
-    "models:build": "blender -b --threads 4 --python scripts/models/build_creatures.py -- --all && node scripts/optimize-models.mjs"
+    "models:build": "blender -b --threads 4 --python scripts/models/build_creatures.py -- --all && node scripts/optimize-models.mjs",
+    "mobile:sync:android": "vite build --mode mobile && cap sync android",
+    "mobile:sync:ios": "vite build --mode mobile && cap sync ios"
   },
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",

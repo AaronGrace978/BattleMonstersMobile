@@ -97,3 +97,7 @@ Artwork was generated specifically for this game. Creature names and branding ar
 ## Rebuild the 3D assets
 
 The checked-in compressed GLB files work without Blender. To regenerate the complete roster, install Blender 4.3+ and run `npm run models:build`. Blender renders character previews to `work/previews/` and exports raw assets to `work/models/`; the optimizer canonicalizes the resting pose and writes `public/models/`. The full ten-creature mesh payload is under 2.5 MB. No external model-generation API or proprietary asset pack is required.
+
+## Releases
+
+GitHub Actions builds Android and iOS artifacts from the same commit and cuts a development prerelease after both native builds succeed. See [RELEASING.md](docs/RELEASING.md) for build outputs, signing secrets, and versioning. Unsigned iOS files require Apple signing before phone installation.

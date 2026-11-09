@@ -13,3 +13,4 @@ ios/App/Pods/
 *.p12
 *.mobileprovision
 work/
+distribution/
