@@ -1,7 +1,7 @@
 import {appendFileSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 
-const ALIASES={
+export const ALIASES={
  android_keystore:['BMM_ANDROID_KEYSTORE_BASE64','ANDROID_KEYSTORE_BASE64','ANDROID_SIGNING_KEY','KEYSTORE_BASE64','SIGNING_KEY','ANDROID_KEYSTORE'],
  android_store_password:['BMM_ANDROID_KEYSTORE_PASSWORD','ANDROID_KEYSTORE_PASSWORD','KEYSTORE_PASSWORD','KEY_STORE_PASSWORD','STORE_PASSWORD'],
  android_alias:['BMM_ANDROID_KEY_ALIAS','ANDROID_KEY_ALIAS','KEY_ALIAS','SIGNING_KEY_ALIAS','ALIAS'],
@@ -19,8 +19,8 @@ export function signingMetadata(secrets){
  return metadata;
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){
- let context;try{context=JSON.parse(process.env.BMM_SIGNING_SECRETS_JSON||'{}');}catch{throw Error('Signing metadata could not be read');}
- const metadata=signingMetadata(context);delete process.env.BMM_SIGNING_SECRETS_JSON;
+ const names=Object.keys(ALIASES).map(key=>process.env[`BMM_${key.toUpperCase()}_SECRET`]).filter(Boolean);
+ const metadata=signingMetadata(Object.fromEntries(names.map(name=>[name,true])));
  console.log('Visible signing secret names: '+(metadata.signing_names.join(', ')||'(none)'));
  for(const [key,value]of Object.entries(metadata))if(key!=='signing_names'){
   console.log(`${key}: ${typeof value==='boolean'?value:value||'(unmatched)'}`);
